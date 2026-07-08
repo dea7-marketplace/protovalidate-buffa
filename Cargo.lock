@@ -100,38 +100,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc0b364ead1874514c8c2855ab558056ebfeb775653e7ae45ff72f28f8f3166c"
 
 [[package]]
-name = "borsh"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f3f6da4992df95bbcd9af42a6c7dcb994498fc9048230405f3b36ff7cd3f145"
-dependencies = [
- "bytes",
- "cfg_aliases",
-]
-
-[[package]]
 name = "buffa"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec95898e2ef31d6266042f21c398fa5ff8334d14d6b2ac5fb38b55448d94f595"
+checksum = "33f29a40702df4b86ccd84211bfde8cee0bce6d0811450ade4a86a7d0958a23a"
 dependencies = [
- "base64",
  "bytes",
- "compact_str",
- "ecow",
+ "foldhash",
  "hashbrown 0.15.5",
  "once_cell",
+ "rustversion",
  "serde",
  "serde_json",
- "smol_str",
+ "smoothutf8",
  "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "buffa-build"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c26e1e2ec3ddd680a25e60687e0dca72fc2326f01d2ff26acbd8c266a3664693"
+checksum = "ef33217cabddfad99c0a54d42ddb7ca5b73fa492f7b16ddb621132ef51107556"
 dependencies = [
  "buffa",
  "buffa-codegen",
@@ -140,9 +129,9 @@ dependencies = [
 
 [[package]]
 name = "buffa-codegen"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "855364959e603cad456c1656bcf57f431ae6e5b4d4e4f166f7d594df882b6218"
+checksum = "c6681b562b18ea719622d0d12684e88ecbdca600d517557dc7bcef7704631e28"
 dependencies = [
  "buffa",
  "buffa-descriptor",
@@ -155,11 +144,12 @@ dependencies = [
 
 [[package]]
 name = "buffa-descriptor"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f74c0bf128c53f22b0fc3c1e8e66969cd21375879061293fd4e5298e839099a9"
+checksum = "57ed423c4ecec86d1500879ce42e7e5f6def01bc632985ac756c1fd723fa21fc"
 dependencies = [
  "buffa",
+ "rustversion",
  "serde",
  "serde_json",
 ]
@@ -183,15 +173,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "castaway"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dec551ab6e7578819132c713a93c022a05d60159dc86e7a7050223577484c55a"
-dependencies = [
- "rustversion",
 ]
 
 [[package]]
@@ -225,12 +206,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
-name = "cfg_aliases"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
-
-[[package]]
 name = "chrono"
 version = "0.4.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -252,25 +227,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "compact_str"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dfdd1c2274d9aa354115b09dc9a901d6c5576818cdf70d14cae2bdb47df00ab"
-dependencies = [
- "castaway",
- "cfg-if",
- "itoa",
- "rustversion",
- "ryu",
- "serde",
- "static_assertions",
-]
-
-[[package]]
 name = "connectrpc"
-version = "0.7.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "003fac88ace432fd8e6adbe13da8b20e90613b89e70c72186c505ad1bea307b2"
+checksum = "e4d1bbfc95ed1f4f31a027f5b97ff981be2617bc8a5c800fd6fcc701867bb97f"
 dependencies = [
  "async-trait",
  "base64",
@@ -297,15 +257,6 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
-
-[[package]]
-name = "ecow"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78e4f79b296fbaab6ce2e22d52cb4c7f010fe0ebe7a32e34fa25885fd797bd02"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "equivalent"
@@ -472,7 +423,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
  "foldhash",
- "serde",
 ]
 
 [[package]]
@@ -975,12 +925,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
-name = "ryu"
-version = "1.0.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
-
-[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1042,6 +986,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
+name = "simdutf8"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+
+[[package]]
 name = "siphasher"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1060,20 +1010,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 
 [[package]]
-name = "smol_str"
-version = "0.3.2"
+name = "smoothutf8"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9676b89cd56310a87b93dec47b11af744f34d5fc9f367b829474eec0a891350d"
+checksum = "36358427d32ecdb1624616deed99eccfef0a167fe5bf40ddb51efe6980bc1ec8"
 dependencies = [
- "borsh",
- "serde",
+ "simdutf8",
 ]
-
-[[package]]
-name = "static_assertions"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"
