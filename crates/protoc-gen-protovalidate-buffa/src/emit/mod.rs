@@ -1,5 +1,5 @@
 //! Orchestrate the emit phase: group scanned validators by source `.proto`
-//! file and render one Rust file per source.
+//! file or package, with optional module packaging.
 
 use anyhow::Result;
 use buffa_codegen::generated::compiler::code_generator_response::File;
@@ -9,18 +9,45 @@ use quote::quote;
 use crate::scan::MessageValidators;
 
 /// Plugin options parsed from `opt:` in `buf.gen.yaml`.
+///
+/// # Examples
+///
+/// ```
+/// use protoc_gen_protovalidate_buffa::emit::{self, Options};
+///
+/// let options = Options {
+///     packaging: false,
+///     file_per_package: true,
+///     ..Options::default()
+/// };
+/// let files = emit::render_with_options(&[], &options)?;
+/// assert!(files.is_empty());
+/// # Ok::<(), anyhow::Error>(())
+/// ```
 #[derive(Debug, Clone)]
 pub struct Options {
     /// Rust module path under which the protobuf message types live —
     /// the `mod.rs` packaging file emits `pub(crate) use <proto_module>::<pkg>::*;`
     /// inside each leaf package so local and cross-package type names resolve.
+    /// Ignored when [`Self::packaging`] is `false`.
     pub proto_module: String,
+    /// Emit the `mod.rs` and `<package>.mod.rs` module files (default: `true`).
+    /// Set to `false` to emit only validators with a `.validate.rs` suffix,
+    /// for inclusion in the same module as the message types.
+    pub packaging: bool,
+    /// Merge validators by declared protobuf package (default: `false`).
+    /// When `false`, emit one validator file per source proto. When `true`,
+    /// use the package name as the filename stem, or `__buffa` for the unnamed
+    /// package, matching Buffa. Independent of [`Self::packaging`].
+    pub file_per_package: bool,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
             proto_module: "crate::proto".to_string(),
+            packaging: true,
+            file_per_package: false,
         }
     }
 }
@@ -122,11 +149,17 @@ pub fn render(messages: &[MessageValidators]) -> Result<Vec<File>> {
 
 /// Same as [`render`] but threads parsed plugin options through.
 ///
-/// Also emits a `mod.rs` packaging file that mirrors the proto-package
+/// By default, also emits a `mod.rs` packaging file that mirrors the proto-package
 /// hierarchy as nested `pub mod` declarations, and per-package
 /// `<pkg>.mod.rs` files that flat-`include!()` each per-source output.
 /// Removes the need for an external "generate mod tree" script in
 /// projects that consume this plugin.
+///
+/// [`Options::file_per_package`] independently groups validators by declared
+/// protobuf package instead of source file. With [`Options::packaging`] set
+/// to `false`, emits no module files, adds `.validate` before the `.rs` suffix,
+/// and ignores `proto_module`. Set `packaging=false,file_per_package=true` for one
+/// `<package>.validate.rs` per package beside the corresponding Buffa types.
 ///
 /// # Errors
 ///
@@ -135,9 +168,14 @@ pub fn render_with_options(messages: &[MessageValidators], opts: &Options) -> Re
     use std::collections::BTreeMap;
 
     let schemas = cel::build_schema_index(messages);
-    let mut by_file: BTreeMap<String, Vec<&MessageValidators>> = BTreeMap::new();
+    let mut groups: BTreeMap<&str, Vec<&MessageValidators>> = BTreeMap::new();
     for m in messages {
-        by_file.entry(m.source_file.clone()).or_default().push(m);
+        let key = if opts.file_per_package {
+            &m.package
+        } else {
+            &m.source_file
+        };
+        groups.entry(key).or_default().push(m);
     }
 
     let mut files = Vec::new();
@@ -145,19 +183,35 @@ pub fn render_with_options(messages: &[MessageValidators], opts: &Options) -> Re
     // filenames, so the packaging file can `include!()` each per-package
     // file under the right `pub mod` nesting.
     let mut by_package: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for (source_file, msgs) in by_file {
+    for (key, msgs) in groups {
         let body = render_file(&msgs, &schemas)?;
-        let stem = source_file.trim_end_matches(".proto").replace('/', ".");
-        let path = format!("{stem}.rs");
+        let stem = if opts.file_per_package {
+            let filename = buffa_codegen::package_to_filename(key);
+            filename
+                .strip_suffix(".rs")
+                .unwrap_or(&filename)
+                .to_string()
+        } else {
+            key.trim_end_matches(".proto").replace('/', ".")
+        };
+        let path = if opts.packaging {
+            format!("{stem}.rs")
+        } else {
+            format!("{stem}.validate.rs")
+        };
         let body_str = body.to_string();
         let parsed = syn::parse2(body.clone()).map_err(|e| {
-            anyhow::anyhow!("syn parse failed for {source_file}: {e}\n--- BEGIN TOKENS ---\n{body_str}\n--- END TOKENS ---")
+            anyhow::anyhow!("syn parse failed for {key}: {e}\n--- BEGIN TOKENS ---\n{body_str}\n--- END TOKENS ---")
         })?;
         // The package is everything before the trailing file stem in the
         // dotted form ("example.v1alpha1.style" → package "example.v1alpha1").
-        let package = match stem.rsplit_once('.') {
-            Some((p, _)) => p.to_string(),
-            None => stem.clone(),
+        let package = if opts.file_per_package {
+            key.to_string()
+        } else {
+            match stem.rsplit_once('.') {
+                Some((p, _)) => p.to_string(),
+                None => stem.clone(),
+            }
         };
         by_package.entry(package).or_default().push(path.clone());
         files.push(File {
@@ -167,6 +221,10 @@ pub fn render_with_options(messages: &[MessageValidators], opts: &Options) -> Re
             generated_code_info: None.into(),
             ..Default::default()
         });
+    }
+
+    if !opts.packaging {
+        return Ok(files);
     }
 
     // For each leaf package, emit a `<pkg>.mod.rs` that flat-includes
@@ -184,14 +242,14 @@ pub fn render_with_options(messages: &[MessageValidators], opts: &Options) -> Re
         let body = quote! {
             #( #includes )*
         };
-        let label = format!("{package}.mod.rs");
+        let label = buffa_codegen::package_to_mod_filename(package);
         let formatted = format_token_stream(
             &body,
             "// @generated by protoc-gen-protovalidate-buffa. DO NOT EDIT.\n",
             &label,
         )?;
         files.push(File {
-            name: Some(format!("{package}.mod.rs")),
+            name: Some(label),
             content: Some(formatted),
             insertion_point: None,
             generated_code_info: None.into(),
@@ -258,7 +316,7 @@ fn render_mod_rs(
     let mut root = PackageNode::default();
     for package in by_package.keys() {
         let mut cur = &mut root;
-        for seg in package.split('.') {
+        for seg in package.split('.').filter(|seg| !seg.is_empty()) {
             cur = cur.children.entry(seg.to_string()).or_default();
         }
         cur.package = Some(package.clone());
@@ -301,10 +359,15 @@ fn render_package_node(
             .iter()
             .map(|s| quote::format_ident!("{}", s))
             .collect();
-        let pkg_mod = format!("{pkg}.mod.rs");
+        let pkg_mod = buffa_codegen::package_to_mod_filename(pkg);
         let pkg_lit = proc_macro2::Literal::string(&pkg_mod);
+        let import = if segs.is_empty() {
+            quote! { pub(crate) use #proto_module ::*; }
+        } else {
+            quote! { pub(crate) use #proto_module :: #( #segs )::* ::*; }
+        };
         quote! {
-            pub(crate) use #proto_module :: #( #segs )::* ::*;
+            #import
             include!(#pkg_lit);
         }
     });

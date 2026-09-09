@@ -215,6 +215,7 @@ fn write_field_name_fixtures(
             .expect("scan field-name fixtures");
         let options = protoc_gen_protovalidate_buffa::emit::Options {
             proto_module: format!("crate::{mode}::proto"),
+            ..Default::default()
         };
         let validators = directory.join("validators");
         std::fs::create_dir_all(&validators).expect("create naming validators directory");
@@ -277,6 +278,15 @@ fn write_module_tree_fixtures(
             "custom",
             protoc_gen_protovalidate_buffa::emit::Options {
                 proto_module: "crate::custom::messages".to_string(),
+                ..Default::default()
+            },
+        ),
+        (
+            "grouped",
+            protoc_gen_protovalidate_buffa::emit::Options {
+                proto_module: "crate::grouped::proto".to_string(),
+                file_per_package: true,
+                ..Default::default()
             },
         ),
     ] {
@@ -301,6 +311,7 @@ fn write_module_tree_fixtures(
     let messages = path_literal(messages_dir.join("mod.rs"));
     let default = path_literal(fixture_dir.join("default/mod.rs"));
     let custom = path_literal(fixture_dir.join("custom/mod.rs"));
+    let grouped = path_literal(fixture_dir.join("grouped/mod.rs"));
     let mounts = quote::quote! {
         #[path = #messages]
         mod proto;
@@ -312,6 +323,12 @@ fn write_module_tree_fixtures(
         mod default_validators;
         #[path = #custom]
         mod custom_validators;
+        mod grouped {
+            #[path = #messages]
+            pub(crate) mod proto;
+            #[path = #grouped]
+            mod validators;
+        }
     };
     std::fs::write(out_dir.join("module_tree_mounts.rs"), mounts.to_string())
         .expect("write module-tree root mounts");
