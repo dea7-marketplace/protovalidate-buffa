@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dea7/buffa-connectrpc-0.8-msrv-1.88]
   pull_request:
-    branches: [main]
+    branches: [main, dea7/buffa-connectrpc-0.8-msrv-1.88]
 
 concurrency:
   group: ci-${{ github.ref }}

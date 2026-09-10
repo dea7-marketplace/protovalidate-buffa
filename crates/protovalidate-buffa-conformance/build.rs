@@ -186,6 +186,7 @@ fn enabled_case_files() -> Vec<String> {
         "numbers.proto",
         "bytes.proto",
         "strings.proto",
+        "string_presence.proto",
         "enums.proto",
         "ignore_proto3.proto",
         "ignore_empty_proto3.proto",
