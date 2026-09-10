@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package buf.validate.conformance.cases;
+
+import "buf/validate/validate.proto";
+
+message StringPresence {
+  optional string identifier = 1 [(buf.validate.field).string.uuid = true];
+  optional string email = 2 [(buf.validate.field).string.email = true];
+  optional string choice = 3 [(buf.validate.field).string = {in: ["red", "blue"]}];
+  optional string code = 5 [(buf.validate.field).string = {pattern: "^[a-z]+$", min_len: 2, max_len: 4}];
+  oneof selection {
+    string selected_identifier = 4 [(buf.validate.field).string.uuid = true];
+  }
+}

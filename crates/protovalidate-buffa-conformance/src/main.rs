@@ -35,16 +35,11 @@ fn main() -> anyhow::Result<()> {
     io::stdin().read_to_end(&mut input)?;
     let request = TestConformanceRequest::decode_from_slice(&input)?;
 
-    let mut results: std::collections::HashMap<String, TestResult> =
-        std::collections::HashMap::new();
+    let mut response = TestConformanceResponse::default();
     for (name, any) in &request.cases {
-        results.insert(name.clone(), run_case(any));
+        response.results.insert(name.clone(), run_case(any));
     }
 
-    let response = TestConformanceResponse {
-        results,
-        ..Default::default()
-    };
     let mut out = Vec::new();
     response.encode(&mut out);
     io::stdout().write_all(&out)?;
