@@ -171,10 +171,8 @@ pub fn parse_duration(s: &str) -> Option<chrono::Duration> {
         (stripped, "s")
     } else if let Some(stripped) = rest.strip_suffix('m') {
         (stripped, "m")
-    } else if let Some(stripped) = rest.strip_suffix('h') {
-        (stripped, "h")
     } else {
-        return None;
+        (rest.strip_suffix('h')?, "h")
     };
     let value: f64 = num_str.parse().ok()?;
     let nanos_total: f64 = match unit {
