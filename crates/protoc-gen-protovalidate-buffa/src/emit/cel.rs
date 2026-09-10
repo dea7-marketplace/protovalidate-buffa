@@ -1006,7 +1006,18 @@ fn field_to_schema_entry(f: &FieldValidator) -> Option<MessageFieldEntry> {
             (inner_ty, SchemaFieldKind::Wrapper)
         }
         FieldKind::Repeated(inner) => {
-            let elem = scalar_this_for(inner)?;
+            // A repeated message is still a list even when its schema has
+            // not been resolved yet. Keep the reference for nested selects;
+            // size() only needs the list shape.
+            let elem = match inner.as_ref() {
+                FieldKind::Message { full_name }
+                    if full_name != "google.protobuf.Duration"
+                        && full_name != "google.protobuf.Timestamp" =>
+                {
+                    CelType::MessageRef(full_name.clone())
+                }
+                _ => scalar_this_for(inner)?,
+            };
             (CelType::List(Box::new(elem)), SchemaFieldKind::Repeated)
         }
         // Sub-messages and maps: marked as Message kind so `has()` works
