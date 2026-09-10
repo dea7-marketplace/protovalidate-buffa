@@ -41,7 +41,7 @@ jobs:
         # protoc ≥ 25. Ubuntu's apt version is too old; pin a modern one.
         uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
         with:
-          tool: protoc@34.0
+          tool: protoc@3.34.0
           fallback: none
       - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # stable
         with:
@@ -62,7 +62,7 @@ jobs:
       - name: Install protoc
         uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
         with:
-          tool: protoc@34.0
+          tool: protoc@3.34.0
           fallback: none
       - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # stable
         with:
