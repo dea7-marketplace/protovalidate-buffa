@@ -1414,6 +1414,15 @@ fn emit_string(
     field_number: i32,
     s: &StringStandard,
 ) -> Vec<TokenStream> {
+    emit_string_value(&quote! { self.#accessor }, name_lit, field_number, s)
+}
+
+fn emit_string_value(
+    accessor: &TokenStream,
+    name_lit: &str,
+    field_number: i32,
+    s: &StringStandard,
+) -> Vec<TokenStream> {
     // well_known string format flags — each is a `Bool` rule on StringRules.
     // The oneof field numbers come from validate.proto.
     fn wk_rule(inner: &str, inner_num: i32) -> TokenStream {
@@ -1426,7 +1435,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("min_len", 2, "Uint64");
         out.push(quote! {
-            if self.#accessor.chars().count() < #n_usize {
+            if (#accessor).chars().count() < #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.min_len"),
@@ -1444,7 +1453,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("max_len", 3, "Uint64");
         out.push(quote! {
-            if self.#accessor.chars().count() > #n_usize {
+            if (#accessor).chars().count() > #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.max_len"),
@@ -1459,7 +1468,7 @@ fn emit_string(
 
     if let Some(pat) = &s.pattern {
         let pat_str = pat.as_str();
-        let cache_ident = format_ident!("RE_{}", accessor.to_string().to_uppercase());
+        let cache_ident = format_ident!("RE_STRING");
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("pattern", 6);
         out.push(quote! {
@@ -1470,7 +1479,7 @@ fn emit_string(
                     ::protovalidate_buffa::regex::Regex::new(#pat_str)
                         .expect("pattern regex compiled at code-gen time")
                 });
-                if !re.is_match(&self.#accessor) {
+                if !re.is_match(&(#accessor)) {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field, rule: #rule,
                         rule_id: ::std::borrow::Cow::Borrowed("string.pattern"),
@@ -1497,7 +1506,7 @@ fn emit_string(
             let rid = rule_id.to_string();
             let m = msg.to_string();
             out.push(quote! {
-                if !#fn_path(&self.#accessor) {
+                if !#fn_path(&(#accessor)) {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field, rule: #rule,
                         rule_id: ::std::borrow::Cow::Borrowed(#rid),
@@ -1526,14 +1535,14 @@ fn emit_string(
         let id_empty = format!("{base_id}_empty");
         let id_base = base_id.to_string();
         out.push(quote! {
-            if self.#accessor.is_empty() {
+            if (#accessor).is_empty() {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed(#id_empty),
                     message: ::std::borrow::Cow::Borrowed(""),
                     for_key: false,
                 });
-            } else if !#fn_path(&self.#accessor) {
+            } else if !#fn_path(&(#accessor)) {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field2, rule: #rule2,
                     rule_id: ::std::borrow::Cow::Borrowed(#id_base),
@@ -1729,14 +1738,14 @@ fn emit_string(
         if let Some(re) = empty_rule_id {
             let rid_empty = re.to_string();
             out.push(quote! {
-                if self.#accessor.is_empty() {
+                if (#accessor).is_empty() {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field_a, rule: #rule_a,
                         rule_id: ::std::borrow::Cow::Borrowed(#rid_empty),
                         message: ::std::borrow::Cow::Borrowed(""),
                         for_key: false,
                     });
-                } else if !(#fn_path)(::core::convert::AsRef::<str>::as_ref(&self.#accessor)) {
+                } else if !(#fn_path)(::core::convert::AsRef::<str>::as_ref(&(#accessor))) {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field_b, rule: #rule_b,
                         rule_id: ::std::borrow::Cow::Borrowed(#rid),
@@ -1749,8 +1758,8 @@ fn emit_string(
             let _ = field_a;
             let _ = rule_a;
             out.push(quote! {
-                if !self.#accessor.is_empty()
-                    && !(#fn_path)(::core::convert::AsRef::<str>::as_ref(&self.#accessor))
+                if !(#accessor).is_empty()
+                    && !(#fn_path)(::core::convert::AsRef::<str>::as_ref(&(#accessor)))
                 {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field_b, rule: #rule_b,
@@ -1770,7 +1779,7 @@ fn emit_string(
         out.push(quote! {
             {
                 const ALLOWED: &[&str] = &[ #( #set ),* ];
-                if !ALLOWED.iter().any(|candidate| *candidate == ::core::convert::AsRef::<str>::as_ref(&self.#accessor)) {
+                if !ALLOWED.iter().any(|candidate| *candidate == ::core::convert::AsRef::<str>::as_ref(&(#accessor))) {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field, rule: #rule,
                         rule_id: ::std::borrow::Cow::Borrowed("string.in"),
@@ -1791,7 +1800,7 @@ fn emit_string(
         out.push(quote! {
             {
                 const DISALLOWED: &[&str] = &[ #( #set ),* ];
-                if DISALLOWED.iter().any(|candidate| *candidate == ::core::convert::AsRef::<str>::as_ref(&self.#accessor)) {
+                if DISALLOWED.iter().any(|candidate| *candidate == ::core::convert::AsRef::<str>::as_ref(&(#accessor))) {
                     violations.push(::protovalidate_buffa::Violation {
                         field: #field, rule: #rule,
                         rule_id: ::std::borrow::Cow::Borrowed("string.not_in"),
@@ -1809,7 +1818,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("prefix", 7);
         out.push(quote! {
-            if !self.#accessor.starts_with(#prefix) {
+            if !(#accessor).starts_with(#prefix) {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.prefix"),
@@ -1826,7 +1835,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("suffix", 8);
         out.push(quote! {
-            if !self.#accessor.ends_with(#suffix) {
+            if !(#accessor).ends_with(#suffix) {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.suffix"),
@@ -1843,7 +1852,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("contains", 9);
         out.push(quote! {
-            if !self.#accessor.contains(#contains) {
+            if !(#accessor).contains(#contains) {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.contains"),
@@ -1860,7 +1869,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("not_contains", 23);
         out.push(quote! {
-            if self.#accessor.contains(#not_contains) {
+            if (#accessor).contains(#not_contains) {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.not_contains"),
@@ -1878,7 +1887,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("len", 19, "Uint64");
         out.push(quote! {
-            if self.#accessor.chars().count() != #n_usize {
+            if (#accessor).chars().count() != #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.len"),
@@ -1896,7 +1905,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("min_bytes", 4, "Uint64");
         out.push(quote! {
-            if self.#accessor.len() < #n_usize {
+            if (#accessor).len() < #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.min_bytes"),
@@ -1914,7 +1923,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("max_bytes", 5, "Uint64");
         out.push(quote! {
-            if self.#accessor.len() > #n_usize {
+            if (#accessor).len() > #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.max_bytes"),
@@ -1932,7 +1941,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path_ty("len_bytes", 20, "Uint64");
         out.push(quote! {
-            if self.#accessor.len() != #n_usize {
+            if (#accessor).len() != #n_usize {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.len_bytes"),
@@ -1949,7 +1958,7 @@ fn emit_string(
         let field = str_field_path(name_lit, field_number);
         let rule = str_rule_path("const", 1);
         out.push(quote! {
-            if self.#accessor != #r#const {
+            if (#accessor) != #r#const {
                 violations.push(::protovalidate_buffa::Violation {
                     field: #field, rule: #rule,
                     rule_id: ::std::borrow::Cow::Borrowed("string.const"),
@@ -5684,189 +5693,5 @@ pub(crate) fn emit_string_checks_on(
     field_number: i32,
     s: &StringStandard,
 ) -> Vec<TokenStream> {
-    let mut out: Vec<TokenStream> = Vec::new();
-    let fp = || field_path_scalar(name_lit, field_number, "String");
-    let rp = |inner: &str, inner_num: i32, ty: &str| {
-        rule_path_scalar("string", 14, inner, inner_num, ty)
-    };
-    let push = |out: &mut Vec<TokenStream>,
-                inner: &str,
-                inner_num: i32,
-                ty: &str,
-                rule_id: &str,
-                cond: TokenStream| {
-        let field = fp();
-        let rule = rp(inner, inner_num, ty);
-        let rid = rule_id.to_string();
-        out.push(quote! {
-            if #cond {
-                violations.push(::protovalidate_buffa::Violation {
-                    field: #field, rule: #rule,
-                    rule_id: ::std::borrow::Cow::Borrowed(#rid),
-                    message: ::std::borrow::Cow::Borrowed(""),
-                    for_key: false,
-                });
-            }
-        });
-    };
-    if let Some(c) = &s.r#const {
-        push(
-            &mut out,
-            "const",
-            1,
-            "String",
-            "string.const",
-            quote! { #v != #c },
-        );
-    }
-    if let Some(n) = s.min_len {
-        let n_usize = usize::try_from(n).expect("len fits in usize");
-        push(
-            &mut out,
-            "min_len",
-            2,
-            "Uint64",
-            "string.min_len",
-            quote! { #v.chars().count() < #n_usize },
-        );
-    }
-    if let Some(n) = s.max_len {
-        let n_usize = usize::try_from(n).expect("len fits in usize");
-        push(
-            &mut out,
-            "max_len",
-            3,
-            "Uint64",
-            "string.max_len",
-            quote! { #v.chars().count() > #n_usize },
-        );
-    }
-    if let Some(n) = s.min_bytes {
-        let n_usize = usize::try_from(n).expect("len fits in usize");
-        push(
-            &mut out,
-            "min_bytes",
-            4,
-            "Uint64",
-            "string.min_bytes",
-            quote! { #v.len() < #n_usize },
-        );
-    }
-    if let Some(n) = s.max_bytes {
-        let n_usize = usize::try_from(n).expect("len fits in usize");
-        push(
-            &mut out,
-            "max_bytes",
-            5,
-            "Uint64",
-            "string.max_bytes",
-            quote! { #v.len() > #n_usize },
-        );
-    }
-    if let Some(pre) = &s.prefix {
-        push(
-            &mut out,
-            "prefix",
-            7,
-            "String",
-            "string.prefix",
-            quote! { !#v.starts_with(#pre) },
-        );
-    }
-    if let Some(suf) = &s.suffix {
-        push(
-            &mut out,
-            "suffix",
-            8,
-            "String",
-            "string.suffix",
-            quote! { !#v.ends_with(#suf) },
-        );
-    }
-    if let Some(cn) = &s.contains {
-        push(
-            &mut out,
-            "contains",
-            9,
-            "String",
-            "string.contains",
-            quote! { !#v.contains(#cn) },
-        );
-    }
-    if let Some(nc) = &s.not_contains {
-        push(
-            &mut out,
-            "not_contains",
-            23,
-            "String",
-            "string.not_contains",
-            quote! { #v.contains(#nc) },
-        );
-    }
-    if !s.in_set.is_empty() {
-        let set = &s.in_set;
-        let field = fp();
-        let rule = rp("in", 10, "String");
-        out.push(quote! {
-            {
-                const ALLOWED: &[&str] = &[ #( #set ),* ];
-                if !ALLOWED.iter().any(|c| *c == ::core::convert::AsRef::<str>::as_ref(#v)) {
-                    violations.push(::protovalidate_buffa::Violation {
-                        field: #field, rule: #rule,
-                        rule_id: ::std::borrow::Cow::Borrowed("string.in"),
-                        message: ::std::borrow::Cow::Borrowed(""),
-                        for_key: false,
-                    });
-                }
-            }
-        });
-    }
-    if !s.not_in_set.is_empty() {
-        let set = &s.not_in_set;
-        let field = fp();
-        let rule = rp("not_in", 11, "String");
-        out.push(quote! {
-            {
-                const DISALLOWED: &[&str] = &[ #( #set ),* ];
-                if DISALLOWED.iter().any(|c| *c == ::core::convert::AsRef::<str>::as_ref(#v)) {
-                    violations.push(::protovalidate_buffa::Violation {
-                        field: #field, rule: #rule,
-                        rule_id: ::std::borrow::Cow::Borrowed("string.not_in"),
-                        message: ::std::borrow::Cow::Borrowed(""),
-                        for_key: false,
-                    });
-                }
-            }
-        });
-    }
-    if let Some(pat) = &s.pattern {
-        let pat_str = pat.as_str();
-        let field = fp();
-        let rule = rp("pattern", 6, "String");
-        let cache_ident = format_ident!(
-            "RE_ONEOF_{}",
-            name_lit
-                .to_uppercase()
-                .replace(|c: char| !c.is_alphanumeric(), "_")
-        );
-        out.push(quote! {
-            {
-                static #cache_ident: ::std::sync::OnceLock<::protovalidate_buffa::regex::Regex> =
-                    ::std::sync::OnceLock::new();
-                let re = #cache_ident.get_or_init(|| {
-                    ::protovalidate_buffa::regex::Regex::new(#pat_str)
-                        .expect("pattern regex compiled at code-gen time")
-                });
-                if !re.is_match(::core::convert::AsRef::<str>::as_ref(#v)) {
-                    violations.push(::protovalidate_buffa::Violation {
-                        field: #field, rule: #rule,
-                        rule_id: ::std::borrow::Cow::Borrowed("string.pattern"),
-                        message: ::std::borrow::Cow::Borrowed(""),
-                        for_key: false,
-                    });
-                }
-            }
-        });
-    }
-    out
+    emit_string_value(&quote! { #v }, name_lit, field_number, s)
 }

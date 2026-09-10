@@ -65,9 +65,39 @@ fn message(
 /// The emitted `pattern` check must borrow the value through `AsRef`.
 fn assert_pattern_borrows(src: &str) {
     assert!(
-        src.contains("is_match(::core::convert::AsRef::<str>::as_ref(v))"),
+        src.contains("is_match(&(v))"),
         "pattern check must borrow the value through `AsRef`; generated source was:\n{src}"
     );
+}
+
+#[test]
+fn optional_and_oneof_strings_emit_uuid_and_email_checks() {
+    for (rule, helper) in [("uuid", "is_uuid"), ("email", "is_email")] {
+        let make_field = || {
+            let mut field =
+                string_field_with_pattern(FieldKind::Optional(Box::new(FieldKind::String)));
+            let rules = field.standard.string.as_mut().unwrap();
+            if rule == "uuid" {
+                rules.uuid = Some(true);
+            } else {
+                rules.email = Some(true);
+            }
+            field
+        };
+        assert!(render_to_source(message(vec![make_field()], Vec::new())).contains(helper));
+        let mut field = make_field();
+        field.field_type = FieldKind::String;
+        field.oneof_name = Some("kind".to_owned());
+        field.oneof_index = Some(0);
+        let oneof = OneofValidator {
+            name: "kind".to_owned(),
+            rust_name: "kind".to_owned(),
+            required: false,
+            parent_msg_name: "M".to_owned(),
+            fields: vec![field],
+        };
+        assert!(render_to_source(message(Vec::new(), vec![oneof])).contains(helper));
+    }
 }
 
 /// An `optional string` field borrows its inner value.
