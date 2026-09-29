@@ -1577,7 +1577,7 @@ pub fn emit_repeated(
             let Some(fam) = family else { continue };
             let fam_name = fam.name;
             let fam_num = fam.number;
-            let ext_bracketed = format!("[buf.validate.conformance.cases.{ext_name}]");
+            let ext_bracketed = format!("[{ext_name}]");
             // Native path: bind `this` to the element value and `rule` to
             // the extension's constant value.
             let fp_quote = quote! {
@@ -2279,10 +2279,10 @@ fn emit_scalar_checks(
                     let cache_ident = format_ident!("RE_{}_{}", field_upper, elem_upper);
                     out.push(quote! {
                         {
-                            static #cache_ident: ::std::sync::OnceLock<::regex::Regex> =
+                            static #cache_ident: ::std::sync::OnceLock<::protovalidate_buffa::regex::Regex> =
                                 ::std::sync::OnceLock::new();
                             let re = #cache_ident.get_or_init(|| {
-                                ::regex::Regex::new(#pat_str)
+                                ::protovalidate_buffa::regex::Regex::new(#pat_str)
                                     .expect("pattern regex compiled at code-gen time")
                             });
                             if !re.is_match(#elem_ident) {

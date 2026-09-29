@@ -125,7 +125,7 @@ pub(crate) fn emit_message_level(
             if let Some(native_call) =
                 try_emit_native_field_cel(f, rule, &fp, idx_lit, &field_ident, schemas, shape)
             {
-                calls.push(native_call);
+                calls.push(guard_zero_value(f, &field_ident, native_call));
                 continue;
             }
             calls.push(emit_runtime_error_violation(
@@ -161,7 +161,7 @@ pub(crate) fn emit_message_level(
             let family_num = family.number;
             let family_fty = format_ident!("Message");
             let ext_fty = format_ident!("{}", rule.ext_field_type);
-            let ext_bracketed = format!("[buf.validate.conformance.cases.{}]", rule.ext_name);
+            let ext_bracketed = format!("[{}]", rule.ext_name);
             let ext_num = rule.ext_number;
             // For Optional<T> (proto2 / editions explicit) or Repeated<T>,
             // the field path uses inner scalar type. Wrapper/Map keep
@@ -214,7 +214,7 @@ pub(crate) fn emit_message_level(
                 &predef_rule_path,
                 shape,
             ) {
-                calls.push(native_call);
+                calls.push(guard_zero_value(f, &field_ident, native_call));
                 continue;
             }
             calls.push(emit_runtime_error_violation(
@@ -224,6 +224,45 @@ pub(crate) fn emit_message_level(
         }
     }
     (statics, calls)
+}
+
+/// `IGNORE_IF_ZERO_VALUE` skips every rule of a field holding its zero value,
+/// its `cel` and predefined rules included, as it does for the standard rules
+/// (`emit::field`). Kinds with presence (optional, wrapper, message) are
+/// skipped by their own `Some` checks.
+fn guard_zero_value(
+    f: &FieldValidator,
+    field_ident: &syn::Ident,
+    call: TokenStream,
+) -> TokenStream {
+    if !matches!(f.ignore, crate::scan::Ignore::IfZeroValue) || f.is_legacy_required {
+        return call;
+    }
+    let guard = match &f.field_type {
+        FieldKind::String | FieldKind::Bytes | FieldKind::Repeated(_) | FieldKind::Map { .. } => {
+            quote! { !self.#field_ident.is_empty() }
+        }
+        FieldKind::Int32 | FieldKind::Sint32 | FieldKind::Sfixed32 => {
+            quote! { self.#field_ident != 0i32 }
+        }
+        FieldKind::Int64 | FieldKind::Sint64 | FieldKind::Sfixed64 => {
+            quote! { self.#field_ident != 0i64 }
+        }
+        FieldKind::Uint32 | FieldKind::Fixed32 => quote! { self.#field_ident != 0u32 },
+        FieldKind::Uint64 | FieldKind::Fixed64 => quote! { self.#field_ident != 0u64 },
+        FieldKind::Float => quote! { self.#field_ident != 0f32 },
+        FieldKind::Double => quote! { self.#field_ident != 0f64 },
+        FieldKind::Bool => quote! { self.#field_ident },
+        FieldKind::Enum { .. } => quote! { (self.#field_ident as i32) != 0i32 },
+        FieldKind::Message { .. } | FieldKind::Optional(_) | FieldKind::Wrapper(_) => {
+            return call;
+        }
+    };
+    quote! {
+        if #guard {
+            #call
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

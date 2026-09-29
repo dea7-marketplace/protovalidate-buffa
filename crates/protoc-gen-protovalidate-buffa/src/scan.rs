@@ -135,7 +135,9 @@ pub struct PredefinedCel {
     pub rule_const: Option<RuleConst>,
     /// Extension number (for rule-path metadata).
     pub ext_number: i32,
-    /// Extension name (e.g. "int32_abs_in_proto2").
+    /// Fully qualified extension name without the leading dot (e.g.
+    /// "buf.validate.conformance.cases.int32_abs_in_proto2"), as the rule
+    /// path's bracketed element names it.
     pub ext_name: String,
     /// Extension's declared proto type (for rule-path field_type).
     pub ext_field_type: String,
@@ -487,6 +489,8 @@ pub struct MapStandard {
 pub struct PredefinedExt {
     pub extendee: String,
     pub number: u32,
+    /// Fully qualified name without the leading dot: the declaring file's
+    /// package, any enclosing messages, then the extension's own name.
     pub name: String,
     /// Proto type of the extension value (e.g. TYPE_INT32, TYPE_FLOAT, TYPE_MESSAGE).
     pub proto_type: field_descriptor_proto::Type,
@@ -503,16 +507,26 @@ pub type PredefinedExtRegistry = std::collections::HashMap<(String, u32), Predef
 
 fn collect_predefined_extensions(req: &CodeGeneratorRequest) -> PredefinedExtRegistry {
     use protovalidate_buffa_protos::buf::validate::{__buffa::ext::PREDEFINED, PredefinedRules};
-    fn walk_messages<F: FnMut(&FieldDescriptorProto)>(msgs: &[DescriptorProto], f: &mut F) {
+    fn walk_messages<F: FnMut(&str, &FieldDescriptorProto)>(
+        scope: &str,
+        msgs: &[DescriptorProto],
+        f: &mut F,
+    ) {
         for m in msgs {
+            let name = m.name.as_deref().unwrap_or_default();
+            let scope = if scope.is_empty() {
+                name.to_string()
+            } else {
+                format!("{scope}.{name}")
+            };
             for e in &m.extension {
-                f(e);
+                f(&scope, e);
             }
-            walk_messages(&m.nested_type, f);
+            walk_messages(&scope, &m.nested_type, f);
         }
     }
     let mut out: PredefinedExtRegistry = PredefinedExtRegistry::default();
-    let mut walk = |ext: &FieldDescriptorProto| {
+    let mut walk = |scope: &str, ext: &FieldDescriptorProto| {
         let Some(extendee) = ext.extendee.as_deref() else {
             return;
         };
@@ -533,7 +547,12 @@ fn collect_predefined_extensions(req: &CodeGeneratorRequest) -> PredefinedExtReg
         let label = ext
             .label
             .unwrap_or(field_descriptor_proto::Label::LABEL_OPTIONAL);
-        let name = ext.name.clone().unwrap_or_default();
+        let short_name = ext.name.as_deref().unwrap_or_default();
+        let name = if scope.is_empty() {
+            short_name.to_string()
+        } else {
+            format!("{scope}.{short_name}")
+        };
         let pr: Option<PredefinedRules> = ext
             .options
             .as_option()
@@ -556,10 +575,11 @@ fn collect_predefined_extensions(req: &CodeGeneratorRequest) -> PredefinedExtReg
         );
     };
     for file in &req.proto_file {
+        let package = file.package.as_deref().unwrap_or_default();
         for e in &file.extension {
-            walk(e);
+            walk(package, e);
         }
-        walk_messages(&file.message_type, &mut walk);
+        walk_messages(package, &file.message_type, &mut walk);
     }
     out
 }
