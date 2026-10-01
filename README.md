@@ -1,5 +1,27 @@
 # protovalidate-buffa
 
+> **Dea7 fork.** This repository tracks
+> [mathematic-inc/protovalidate-buffa](https://github.com/mathematic-inc/protovalidate-buffa)
+> `main` (0.10.1) and carries only generator fixes that upstream does not have
+> yet. Dea7 takes the runtime, macros and `-protos` crates from crates.io; only
+> `protoc-gen-protovalidate-buffa` comes from this repository. Each fix has a
+> failing test against upstream:
+>
+> 1. Standard string rules (`uuid`, `email`, `pattern`, ...) on `optional`
+>    strings and string oneof members are emitted. Upstream emits no `uuid` or
+>    `email` check for those fields, so malformed values pass validation.
+>    Test: `tests/optional_string_pattern.rs`.
+> 2. `IGNORE_IF_ZERO_VALUE` also guards a field's predefined and `cel` rules.
+>    Test: `tests/predefined_string_rules.rs`
+>    (`ignore_if_zero_value_guards_predefined_and_cel_rules`).
+> 3. A predefined rule's rule path names its own extension
+>    (`[acme.v1.language_tag]`), not `[buf.validate.conformance.cases.<name>]`.
+>    Test: `tests/predefined_string_rules.rs`
+>    (`rule_path_names_the_extension_it_came_from`).
+>
+> When upstream releases these, Dea7 switches to the crates.io generator and
+> this repository is archived.
+
 Static-codegen [protovalidate] for the [buffa] Rust protobuf runtime.
 
 Annotate your `.proto` messages with `(buf.validate.*)` rules; a codegen plugin
