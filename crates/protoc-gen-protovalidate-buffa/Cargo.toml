@@ -1,6 +1,6 @@
 [package]
 name = "protoc-gen-protovalidate-buffa"
-version = "0.10.1"
+version = "0.10.2"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -43,7 +43,7 @@ buffa-types = "0.9.1"
 cel = { version = "0.14", default-features = false }
 prettyplease = "0.3"
 proc-macro2 = "1"
-protovalidate-buffa-protos = { path = "../protovalidate-buffa-protos", version = "0.7.1" }
+protovalidate-buffa-protos = { path = "../protovalidate-buffa-protos", version = "0.7.2" }
 quote = "1"
 syn = { version = "3", features = ["full"] }
 

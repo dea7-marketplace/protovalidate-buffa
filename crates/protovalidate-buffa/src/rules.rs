@@ -113,14 +113,15 @@ pub mod string {
         is_ipv4_prefix(s) || is_ipv6_prefix(s)
     }
 
-    /// RFC 1035 hostname — labels of 1..=63 LDH characters, total ≤253 chars,
-    /// and the final label must not be all digits.
+    /// RFC 1035 hostname — labels of 1..=63 LDH characters, total ≤253 chars
+    /// excluding the optional trailing dot, and the final label must not be
+    /// all digits.
     #[must_use]
     pub fn is_hostname(s: &str) -> bool {
-        if s.is_empty() || s.len() > 253 {
+        let trimmed = s.strip_suffix('.').unwrap_or(s);
+        if trimmed.is_empty() || trimmed.len() > 253 {
             return false;
         }
-        let trimmed = s.strip_suffix('.').unwrap_or(s);
         let labels: Vec<&str> = trimmed.split('.').collect();
         if labels.is_empty() {
             return false;

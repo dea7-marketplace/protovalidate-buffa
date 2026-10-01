@@ -6790,7 +6790,7 @@ pub struct UInt64RulesView<'a> {
     /// message MyUInt64 {
     ///   uint64 value = 1 [
     ///     (buf.validate.field).uint64.example = 1,
-    ///     (buf.validate.field).uint64.example = -10
+    ///     (buf.validate.field).uint64.example = 10
     ///   ];
     /// }
     /// ```
@@ -7295,7 +7295,7 @@ impl UInt64RulesOwnedView {
     /// message MyUInt64 {
     ///   uint64 value = 1 [
     ///     (buf.validate.field).uint64.example = 1,
-    ///     (buf.validate.field).uint64.example = -10
+    ///     (buf.validate.field).uint64.example = 10
     ///   ];
     /// }
     /// ```
@@ -11082,8 +11082,8 @@ pub struct BoolRulesView<'a> {
     /// ```proto,ignore
     /// message MyBool {
     ///   bool value = 1 [
-    ///     (buf.validate.field).bool.example = 1,
-    ///     (buf.validate.field).bool.example = 2
+    ///     (buf.validate.field).bool.example = true,
+    ///     (buf.validate.field).bool.example = false
     ///   ];
     /// }
     /// ```
@@ -11347,8 +11347,8 @@ impl BoolRulesOwnedView {
     /// ```proto,ignore
     /// message MyBool {
     ///   bool value = 1 [
-    ///     (buf.validate.field).bool.example = 1,
-    ///     (buf.validate.field).bool.example = 2
+    ///     (buf.validate.field).bool.example = true,
+    ///     (buf.validate.field).bool.example = false
     ///   ];
     /// }
     /// ```
@@ -11562,7 +11562,7 @@ pub struct StringRulesView<'a> {
     /// ```proto,ignore
     /// message MyString {
     ///   // must be in list ["apple", "banana"]
-    ///   string value = 1 [(buf.validate.field).string.in = "apple", (buf.validate.field).string.in = "banana"];
+    ///   string value = 1 [(buf.validate.field).string = { in: ["apple", "banana"] }];
     /// }
     /// ```
     ///
@@ -11574,7 +11574,7 @@ pub struct StringRulesView<'a> {
     /// ```proto,ignore
     /// message MyString {
     ///   // value must not be in list ["orange", "grape"]
-    ///   string value = 1 [(buf.validate.field).string.not_in = "orange", (buf.validate.field).string.not_in = "grape"];
+    ///   string value = 1 [(buf.validate.field).string = { not_in: ["orange", "grape"] }];
     /// }
     /// ```
     ///
@@ -12951,7 +12951,7 @@ impl StringRulesOwnedView {
     /// ```proto,ignore
     /// message MyString {
     ///   // must be in list ["apple", "banana"]
-    ///   string value = 1 [(buf.validate.field).string.in = "apple", (buf.validate.field).string.in = "banana"];
+    ///   string value = 1 [(buf.validate.field).string = { in: ["apple", "banana"] }];
     /// }
     /// ```
     ///
@@ -12966,7 +12966,7 @@ impl StringRulesOwnedView {
     /// ```proto,ignore
     /// message MyString {
     ///   // value must not be in list ["orange", "grape"]
-    ///   string value = 1 [(buf.validate.field).string.not_in = "orange", (buf.validate.field).string.not_in = "grape"];
+    ///   string value = 1 [(buf.validate.field).string = { not_in: ["orange", "grape"] }];
     /// }
     /// ```
     ///
@@ -13167,7 +13167,7 @@ pub struct BytesRulesView<'a> {
     /// ```proto,ignore
     /// message MyBytes {
     ///   // value must in ["\x01\x02", "\x02\x03", "\x03\x04"]
-    ///   optional bytes value = 1 [(buf.validate.field).bytes.in = {"\x01\x02", "\x02\x03", "\x03\x04"}];
+    ///   optional bytes value = 1 [(buf.validate.field).bytes = { in: ["\x01\x02", "\x02\x03", "\x03\x04"] }];
     /// }
     /// ```
     ///
@@ -13181,7 +13181,7 @@ pub struct BytesRulesView<'a> {
     /// ```proto,ignore
     /// message MyBytes {
     ///   // value must not in ["\x01\x02", "\x02\x03", "\x03\x04"]
-    ///   optional bytes value = 1 [(buf.validate.field).bytes.not_in = {"\x01\x02", "\x02\x03", "\x03\x04"}];
+    ///   optional bytes value = 1 [(buf.validate.field).bytes = { not_in: ["\x01\x02", "\x02\x03", "\x03\x04"] }];
     /// }
     /// ```
     ///
@@ -13849,7 +13849,7 @@ impl BytesRulesOwnedView {
     /// ```proto,ignore
     /// message MyBytes {
     ///   // value must in ["\x01\x02", "\x02\x03", "\x03\x04"]
-    ///   optional bytes value = 1 [(buf.validate.field).bytes.in = {"\x01\x02", "\x02\x03", "\x03\x04"}];
+    ///   optional bytes value = 1 [(buf.validate.field).bytes = { in: ["\x01\x02", "\x02\x03", "\x03\x04"] }];
     /// }
     /// ```
     ///
@@ -13866,7 +13866,7 @@ impl BytesRulesOwnedView {
     /// ```proto,ignore
     /// message MyBytes {
     ///   // value must not in ["\x01\x02", "\x02\x03", "\x03\x04"]
-    ///   optional bytes value = 1 [(buf.validate.field).bytes.not_in = {"\x01\x02", "\x02\x03", "\x03\x04"}];
+    ///   optional bytes value = 1 [(buf.validate.field).bytes = { not_in: ["\x01\x02", "\x02\x03", "\x03\x04"] }];
     /// }
     /// ```
     ///
@@ -14023,8 +14023,10 @@ pub struct EnumRulesView<'a> {
     /// }
     ///
     /// message MyMessage {
+    ///   MyEnum value = 1 [
     ///     (buf.validate.field).enum.example = 1,
     ///     (buf.validate.field).enum.example = 2
+    ///   ];
     /// }
     /// ```
     ///
@@ -14450,8 +14452,10 @@ impl EnumRulesOwnedView {
     /// }
     ///
     /// message MyMessage {
+    ///   MyEnum value = 1 [
     ///     (buf.validate.field).enum.example = 1,
     ///     (buf.validate.field).enum.example = 2
+    ///   ];
     /// }
     /// ```
     ///
@@ -15792,7 +15796,7 @@ pub struct DurationRulesView<'a> {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // value must equal 5s
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.const = "5s"];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.const = { seconds: 5 }];
     /// }
     /// ```
     ///
@@ -15807,7 +15811,9 @@ pub struct DurationRulesView<'a> {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // must be in list [1s, 2s, 3s]
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.in = ["1s", "2s", "3s"]];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration = {
+    ///     in: [{ seconds: 1 }, { seconds: 2 }, { seconds: 3 }]
+    ///   }];
     /// }
     /// ```
     ///
@@ -15824,7 +15830,9 @@ pub struct DurationRulesView<'a> {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // value must not be in list [1s, 2s, 3s]
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.not_in = ["1s", "2s", "3s"]];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration = {
+    ///     not_in: [{ seconds: 1 }, { seconds: 2 }, { seconds: 3 }]
+    ///   }];
     /// }
     /// ```
     ///
@@ -15841,7 +15849,7 @@ pub struct DurationRulesView<'a> {
     /// message MyDuration {
     ///   google.protobuf.Duration value = 1 [
     ///     (buf.validate.field).duration.example = { seconds: 1 },
-    ///     (buf.validate.field).duration.example = { seconds: 2 },
+    ///     (buf.validate.field).duration.example = { seconds: 2 }
     ///   ];
     /// }
     /// ```
@@ -16526,7 +16534,7 @@ impl DurationRulesOwnedView {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // value must equal 5s
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.const = "5s"];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.const = { seconds: 5 }];
     /// }
     /// ```
     ///
@@ -16546,7 +16554,9 @@ impl DurationRulesOwnedView {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // must be in list [1s, 2s, 3s]
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.in = ["1s", "2s", "3s"]];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration = {
+    ///     in: [{ seconds: 1 }, { seconds: 2 }, { seconds: 3 }]
+    ///   }];
     /// }
     /// ```
     ///
@@ -16568,7 +16578,9 @@ impl DurationRulesOwnedView {
     /// ```proto,ignore
     /// message MyDuration {
     ///   // value must not be in list [1s, 2s, 3s]
-    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration.not_in = ["1s", "2s", "3s"]];
+    ///   google.protobuf.Duration value = 1 [(buf.validate.field).duration = {
+    ///     not_in: [{ seconds: 1 }, { seconds: 2 }, { seconds: 3 }]
+    ///   }];
     /// }
     /// ```
     ///
@@ -16590,7 +16602,7 @@ impl DurationRulesOwnedView {
     /// message MyDuration {
     ///   google.protobuf.Duration value = 1 [
     ///     (buf.validate.field).duration.example = { seconds: 1 },
-    ///     (buf.validate.field).duration.example = { seconds: 2 },
+    ///     (buf.validate.field).duration.example = { seconds: 2 }
     ///   ];
     /// }
     /// ```
@@ -16717,7 +16729,7 @@ pub struct FieldMaskRulesView<'a> {
     /// message MyFieldMask {
     ///   google.protobuf.FieldMask value = 1 [
     ///     (buf.validate.field).field_mask.example = { paths: ["a", "b"] },
-    ///     (buf.validate.field).field_mask.example = { paths: ["c.a", "d"] },
+    ///     (buf.validate.field).field_mask.example = { paths: ["c.a", "d"] }
     ///   ];
     /// }
     /// ```
@@ -17125,7 +17137,7 @@ impl FieldMaskRulesOwnedView {
     /// message MyFieldMask {
     ///   google.protobuf.FieldMask value = 1 [
     ///     (buf.validate.field).field_mask.example = { paths: ["a", "b"] },
-    ///     (buf.validate.field).field_mask.example = { paths: ["c.a", "d"] },
+    ///     (buf.validate.field).field_mask.example = { paths: ["c.a", "d"] }
     ///   ];
     /// }
     /// ```
@@ -17209,7 +17221,7 @@ pub struct TimestampRulesView<'a> {
     /// message MyTimestamp {
     ///   google.protobuf.Timestamp value = 1 [
     ///     (buf.validate.field).timestamp.example = { seconds: 1672444800 },
-    ///     (buf.validate.field).timestamp.example = { seconds: 1672531200 },
+    ///     (buf.validate.field).timestamp.example = { seconds: 1672531200 }
     ///   ];
     /// }
     /// ```
@@ -17968,7 +17980,7 @@ impl TimestampRulesOwnedView {
     /// message MyTimestamp {
     ///   google.protobuf.Timestamp value = 1 [
     ///     (buf.validate.field).timestamp.example = { seconds: 1672444800 },
-    ///     (buf.validate.field).timestamp.example = { seconds: 1672531200 },
+    ///     (buf.validate.field).timestamp.example = { seconds: 1672531200 }
     ///   ];
     /// }
     /// ```
@@ -18396,7 +18408,7 @@ pub struct ViolationView<'a> {
     ///   bool b = 2 [(buf.validate.field).cel = {
     ///     id: "custom_rule",
     ///     expression: "!this ? 'b must be true': ''"
-    ///   }]
+    ///   }];
     /// }
     /// ```
     ///
@@ -18810,7 +18822,7 @@ impl ViolationOwnedView {
     ///   bool b = 2 [(buf.validate.field).cel = {
     ///     id: "custom_rule",
     ///     expression: "!this ? 'b must be true': ''"
-    ///   }]
+    ///   }];
     /// }
     /// ```
     ///

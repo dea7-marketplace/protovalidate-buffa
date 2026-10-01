@@ -14,13 +14,13 @@ publish = false
 
 [dependencies]
 buffa = "0.9.1"
-protovalidate-buffa = { path = "../../crates/protovalidate-buffa", version = "0.7.2", default-features = false }
+protovalidate-buffa = { path = "../../crates/protovalidate-buffa", version = "0.7.3", default-features = false }
 
 [build-dependencies]
 anyhow = "1"
 buffa = "0.9.1"
 buffa-codegen = "0.9.1"
-protoc-gen-protovalidate-buffa = { path = "../../crates/protoc-gen-protovalidate-buffa", version = "0.10.1" }
+protoc-gen-protovalidate-buffa = { path = "../../crates/protoc-gen-protovalidate-buffa", version = "0.10.2" }
 
 [lints]
 workspace = true

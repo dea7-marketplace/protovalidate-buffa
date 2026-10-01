@@ -57,7 +57,9 @@ and runs both installations. A missing prebuilt binary fails the release checks.
 ## Status
 
 **Conformance: 2872 / 2872 (100%)** against the upstream
-[`protovalidate-conformance`] harness, covering proto2, proto3, and editions 2023.
+[`protovalidate-conformance`] harness at protovalidate **v1.2.2** (the rules this
+crate implements), covering proto2, proto3, and editions 2023, and 2880 / 2880
+against upstream `main`. CI runs both (`conformance` job in `ci.yml`).
 
 ## Why a different crate?
 
