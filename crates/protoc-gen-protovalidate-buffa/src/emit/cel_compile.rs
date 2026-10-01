@@ -204,7 +204,8 @@ pub enum SchemaFieldKind {
     /// A real oneof alternative has presence even when its value is default.
     Oneof {
         accessor: String,
-        module: String,
+        /// Package-relative name of the message declaring the oneof.
+        parent_msg_name: String,
         enumeration: String,
         variant: String,
         view: bool,
@@ -4065,13 +4066,13 @@ fn has_message_field(
     let tokens = match &entry.kind {
         SchemaFieldKind::Oneof {
             accessor,
-            module,
+            parent_msg_name,
             enumeration,
             variant,
             view,
         } => {
             let accessor = crate::emit::field_ident(accessor);
-            let module = crate::emit::field_ident(module);
+            let module = super::oneof::module_path(parent_msg_name);
             let enumeration = crate::emit::field_ident(enumeration);
             let variant = crate::emit::field_ident(variant);
             let root = if *view {
@@ -4150,7 +4151,7 @@ mod tests {
                     ty: CelType::Dyn,
                     kind: SchemaFieldKind::Oneof {
                         accessor: "origin".to_owned(),
-                        module: "source".to_owned(),
+                        parent_msg_name: "Batch.Source".to_owned(),
                         enumeration: "Origin".to_owned(),
                         variant: "Produced".to_owned(),
                         view,
@@ -4161,7 +4162,7 @@ mod tests {
                 compile_with_this("has(this.produced)", CelType::Message(Box::new(schema)));
             let code = output.tokens.to_string();
             assert!(code.contains("__this . origin"));
-            assert!(code.contains("Origin :: Produced"));
+            assert!(code.contains("oneof :: batch :: source :: Origin :: Produced"));
             assert_eq!(code.contains("__buffa :: view :: oneof"), view);
             assert!(!code.contains("produced . is_set"));
         }
@@ -5078,7 +5079,7 @@ mod tests {
         assert_eq!(out.ty, CelType::Bool);
         let s = rendered(&out.tokens);
         assert!(
-            s.contains("OnceLock") && s.contains("Regex"),
+            s.contains("OnceLock < :: protovalidate_buffa :: regex :: Regex >"),
             "expected cached Regex: {s}"
         );
     }
@@ -5112,7 +5113,7 @@ mod tests {
         assert_eq!(out.ty, CelType::Bool);
         let s = out.tokens.to_string();
         assert!(
-            s.contains("Regex :: new") || s.contains("Regex::new"),
+            s.contains(":: protovalidate_buffa :: regex :: Regex :: new"),
             "expected per-call Regex::new: {s}"
         );
         assert!(
